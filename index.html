@@ -467,7 +467,12 @@ function renderTable() {
       if (!active) {
         tdT.innerHTML = `<span class="na-cell">—</span>`;
       } else {
-        tdT.innerHTML = `<button class="tick-btn ${done?'ticked':''}" onclick="toggleTick('${key}')" title="Mark done">${done?'✅':''}</button>`;
+        const person = assignedMember(date, chore.key);
+        if (done) {
+          tdT.innerHTML = `<button class="tick-btn ticked" title="Locked – already done" style="cursor:not-allowed;">🔒</button>`;
+        } else {
+          tdT.innerHTML = `<button class="tick-btn" onclick="toggleTick('${key}','${person}','${chore.label}')" title="Mark done">☐</button>`;
+        }
       }
       tr.appendChild(tdT);
 
@@ -497,9 +502,29 @@ function renderTable() {
 }
 
 // ─── TICK ─────────────────────────────────────────────────────────────────
-function toggleTick(key) {
+const ADMIN_PASS = "bams2026"; // change this to your own password
+
+function toggleTick(key, personName, choreLabel) {
   const current = (dbData[key] || {});
-  saveEntry(key, { done: !current.done });
+
+  if (current.done) {
+    // Ask for admin password to untick
+    const pass = prompt("🔒 This chore is locked.\n\nEnter admin password to untick:");
+    if (pass === null) return; // cancelled
+    if (pass !== ADMIN_PASS) {
+      alert("❌ Wrong password. Cannot untick.");
+      return;
+    }
+    const confirm2 = confirm(`Untick "${choreLabel}"?\nThis will mark it as not done.`);
+    if (!confirm2) return;
+    saveEntry(key, { done: false, doneAt: null });
+    return;
+  }
+
+  // Normal tick — confirm first
+  const confirmed = confirm(`Mark "${choreLabel}" as done by ${personName}?\n\nThis will be locked after confirmation.`);
+  if (!confirmed) return;
+  saveEntry(key, { done: true, doneAt: new Date().toLocaleString() });
 }
 
 // ─── MODAL ────────────────────────────────────────────────────────────────
