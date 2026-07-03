@@ -198,6 +198,7 @@ td.done-cell { background: var(--done-bg) !important; }
     <p>Ajay &nbsp;·&nbsp; Moulali &nbsp;·&nbsp; Basha &nbsp;·&nbsp; Sattam</p>
   </div>
   <div id="clock"></div>
+  <div id="sync-status" style="font-size:0.75rem;background:#ffffff22;padding:4px 10px;border-radius:6px;letter-spacing:.5px;">⏳ Connecting...</div>
 </header>
 
 <!-- LEGEND -->
@@ -264,7 +265,46 @@ td.done-cell { background: var(--done-bg) !important; }
   </div>
 </div>
 
-<script>
+<script type="module">
+// ─── FIREBASE SETUP ───────────────────────────────────────────────────────
+import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, update, get }
+                                                from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getStorage, ref as sref, uploadString, getDownloadURL }
+                                                from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyA2GU0u2M8dYQE2YYGXJGlwkI84HE2488M",
+  authDomain:        "bams-room.firebaseapp.com",
+  databaseURL:       "https://bams-room-default-rtdb.firebaseio.com",
+  projectId:         "bams-room",
+  storageBucket:     "bams-room.firebasestorage.app",
+  messagingSenderId: "107570563909",
+  appId:             "1:107570563909:web:6158fd4022bc31a9d40c2c"
+};
+
+const app     = initializeApp(firebaseConfig);
+const db      = getDatabase(app);
+const storage = getStorage(app);
+
+// Live sync — listen to entire chores node, re-render on any change
+let dbData = {};
+const choreRef = ref(db, "chores");
+onValue(choreRef, snap => {
+  dbData = snap.val() || {};
+  document.getElementById("sync-status").textContent = "🟢 Live Sync";
+  document.getElementById("sync-status").style.background = "#38a16944";
+  renderTable();
+  renderStats(dbData);
+});
+
+function loadData()       { return dbData; }
+function saveEntry(key, patch) {
+  const updates = {};
+  updates[`chores/${key}`] = { ...(dbData[key] || {}), ...patch };
+  update(ref(db), updates);
+}
+
 // ─── CONFIG ──────────────────────────────────────────────────────────────
 const MEMBERS = ["Ajay","Moulali","Basha","Sattam"];
 
@@ -295,14 +335,8 @@ const CHORES = [
   { key:"mop",   label:"Mopping",               days:[0],       startOffset:1 },
 ];
 
-const STORE = "bams_chore_v1";
-
-// ─── STORAGE ─────────────────────────────────────────────────────────────
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORE)) || {}; }
-  catch(e) { return {}; }
-}
-function save(d) { localStorage.setItem(STORE, JSON.stringify(d)); }
+// ─── STORAGE (Firebase replaces localStorage) ────────────────────────────
+// loadData() and saveEntry() defined above in Firebase block
 
 // ─── ROTATION ─────────────────────────────────────────────────────────────
 // For DAILY chores: rotate every day → person = (dayOfYear + choreOffset) % 4
@@ -377,7 +411,7 @@ const MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","
 const DAY_FULL  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 function renderTable() {
-  const data  = load();
+  const data  = loadData();
   const tbody = document.getElementById("tbody");
   document.getElementById("month-label").textContent = `${MON_NAMES[viewMonth]} ${viewYear}`;
 
@@ -464,11 +498,8 @@ function renderTable() {
 
 // ─── TICK ─────────────────────────────────────────────────────────────────
 function toggleTick(key) {
-  const data = load();
-  data[key]  = data[key] || {};
-  data[key].done = !data[key].done;
-  save(data);
-  renderTable();
+  const current = (dbData[key] || {});
+  saveEntry(key, { done: !current.done });
 }
 
 // ─── MODAL ────────────────────────────────────────────────────────────────
@@ -476,7 +507,7 @@ let activeKey = null;
 
 function openModal(key, title) {
   activeKey = key;
-  const entry = (load()[key]) || {};
+  const entry = (dbData[key]) || {};
   document.getElementById("m-title").textContent = "📷 " + title;
   document.getElementById("m-note").value = entry.note || "";
   const prev = document.getElementById("m-preview");
@@ -501,24 +532,48 @@ function previewFile(input) {
   reader.readAsDataURL(input.files[0]);
 }
 
-function saveModal() {
+async function saveModal() {
   if (!activeKey) return;
-  const data = load();
-  data[activeKey] = data[activeKey] || {};
-  const note = document.getElementById("m-note").value.trim();
-  const prev = document.getElementById("m-preview");
-  if (note) data[activeKey].note = note;
-  if (prev.src && prev.src.length > 10 && prev.src !== window.location.href) {
-    data[activeKey].photo = prev.src;
-    data[activeKey].done  = true;
+  const note    = document.getElementById("m-note").value.trim();
+  const prev    = document.getElementById("m-preview");
+  const fileInput = document.getElementById("m-file");
+  const patch   = {};
+
+  if (note) patch.note = note;
+
+  // Upload photo to Firebase Storage if a new file was chosen
+  if (fileInput.files && fileInput.files[0]) {
+    const saveBtn = document.querySelector(".save-btn");
+    saveBtn.textContent = "⏳ Uploading...";
+    saveBtn.disabled = true;
+    try {
+      const file      = fileInput.files[0];
+      const photoPath = `photos/${activeKey}_${Date.now()}`;
+      const photoRef  = sref(storage, photoPath);
+      // Read file as data URL then upload
+      const dataUrl = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = e => res(e.target.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      await uploadString(photoRef, dataUrl, "data_url");
+      const url = await getDownloadURL(photoRef);
+      patch.photo = url;
+      patch.done  = true;
+    } catch(e) {
+      alert("Photo upload failed: " + e.message);
+    }
+    const saveBtn2 = document.querySelector(".save-btn");
+    if (saveBtn2) { saveBtn2.textContent = "✅ Save"; saveBtn2.disabled = false; }
   }
-  save(data);
+
+  if (Object.keys(patch).length > 0) saveEntry(activeKey, patch);
   closeModal();
-  renderTable();
 }
 
 function viewPhoto(key) {
-  const entry = (load()[key]) || {};
+  const entry = (dbData[key]) || {};
   if (!entry.photo) return;
   const w = window.open("","_blank");
   w.document.write(`
@@ -532,8 +587,7 @@ function viewPhoto(key) {
 }
 
 // ─── STATS ────────────────────────────────────────────────────────────────
-function renderStats(data) {
-  const bar = document.getElementById("stats-bar");
+function renderStats(data) {  const bar = document.getElementById("stats-bar");
   const counts = {}; MEMBERS.forEach(m => counts[m] = 0);
   let totalDone = 0, totalSlots = 0;
 
@@ -570,6 +624,15 @@ function renderStats(data) {
     </div>`).join('')}`;
 }
 
+// ─── EXPOSE FUNCTIONS TO HTML (module scope fix) ─────────────────────────
+window.changeMonth  = changeMonth;
+window.toggleTick   = toggleTick;
+window.openModal    = openModal;
+window.closeModal   = closeModal;
+window.previewFile  = previewFile;
+window.saveModal    = saveModal;
+window.viewPhoto    = viewPhoto;
+
 // ─── CLOCK ────────────────────────────────────────────────────────────────
 function tick() {
   document.getElementById("clock").textContent =
@@ -582,8 +645,9 @@ document.getElementById("overlay").addEventListener("click", function(e) {
   if (e.target === this) closeModal();
 });
 
-// ─── INIT ─────────────────────────────────────────────────────────────────
-renderTable();
+// ─── INIT — table renders automatically when Firebase data loads ──────────
+// onValue listener above handles initial render
+
 </script>
 </body>
 </html>
