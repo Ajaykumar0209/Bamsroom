@@ -469,7 +469,7 @@ function renderTable() {
       } else {
         const person = assignedMember(date, chore.key);
         if (done) {
-          tdT.innerHTML = `<button class="tick-btn ticked" title="Locked – already done" style="cursor:not-allowed;">🔒</button>`;
+          tdT.innerHTML = `<button class="tick-btn ticked" onclick="toggleTick('${key}','${person}','${chore.label}')" title="Click to unlock (admin only)" style="cursor:pointer;">🔒</button>`;
         } else {
           tdT.innerHTML = `<button class="tick-btn" onclick="toggleTick('${key}','${person}','${chore.label}')" title="Mark done">☐</button>`;
         }
