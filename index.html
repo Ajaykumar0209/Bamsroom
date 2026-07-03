@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BAMS Room Work</title>
+<style>
+:root {
+  --c-ajay:    #FF85A1;
+  --c-moulali: #4DA6FF;
+  --c-basha:   #3DBE6E;
+  --c-sattam:  #FFB347;
+  --primary:   #1E3A5F;
+  --accent:    #E63946;
+  --done-bg:   #D4EDDA;
+  --done-bdr:  #28A745;
+  --na-bg:     #F0F0F0;
+  --na-color:  #BBBBBB;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #EEF2F7; color: #222; min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--primary); color: #fff;
+  padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+header h1 { font-size: 1.5rem; letter-spacing: 1px; }
+header p  { font-size: 0.82rem; opacity: .7; margin-top: 2px; }
+#clock { font-size: 1.1rem; font-weight: 700; letter-spacing: 2px; background: #ffffff22; padding: 6px 14px; border-radius: 8px; }
+
+/* LEGEND */
+.legend {
+  background: #fff; padding: 10px 28px;
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  border-bottom: 2px solid #dde3ec;
+}
+.leg { display: flex; align-items: center; gap: 7px; font-size: 0.88rem; font-weight: 700; }
+.leg-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #0002; }
+
+/* STATS */
+.stats { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px 28px; }
+.stat-card {
+  background: #fff; border-radius: 10px; padding: 12px 20px;
+  box-shadow: 0 1px 6px #0001; min-width: 150px;
+  border-left: 5px solid var(--primary);
+}
+.stat-card .val { font-size: 1.6rem; font-weight: 900; }
+.stat-card .lbl { font-size: 0.72rem; color: #777; margin-top: 2px; }
+
+/* MONTH NAV */
+.month-nav {
+  background: #fff; padding: 10px 28px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid #dde3ec; font-size: 1.1rem; font-weight: 800; color: var(--primary);
+}
+.month-nav button {
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 6px 18px; font-size: 1.1rem; cursor: pointer;
+  transition: background .15s;
+}
+.month-nav button:hover { background: #2c5282; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; padding: 16px 28px 32px; }
+table {
+  border-collapse: separate; border-spacing: 0;
+  width: 100%; min-width: 1100px;
+  background: #fff; border-radius: 12px;
+  box-shadow: 0 2px 12px #0002; overflow: hidden;
+}
+
+/* THEAD */
+thead tr.hdr-top th {
+  background: var(--primary); color: #fff;
+  padding: 12px 6px; font-size: 0.82rem; text-align: center;
+  border-bottom: 2px solid #ffffff33;
+  border-right: 1px solid #ffffff22;
+}
+thead tr.hdr-top th.chore-hdr { font-size: 0.8rem; }
+thead tr.hdr-sub th {
+  background: #2c5282; color: #dce8ff;
+  padding: 6px 4px; font-size: 0.72rem; text-align: center;
+  border-right: 1px solid #ffffff22; border-bottom: 2px solid #dde3ec;
+}
+
+/* TBODY */
+tbody tr { transition: background .1s; }
+tbody tr:hover { background: #f0f5ff !important; }
+tbody tr.even-row { background: #FAFBFE; }
+tbody tr.odd-row  { background: #FFFFFF; }
+tbody tr.sunday-row { background: #FFF5F5 !important; }
+tbody tr.today-row td { border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); }
+
+td {
+  padding: 5px 4px; text-align: center;
+  font-size: 0.82rem; vertical-align: middle;
+  border-right: 1px solid #E8ECF2;
+  border-bottom: 1px solid #E8ECF2;
+}
+td.date-cell { font-weight: 800; font-size: 0.85rem; white-space: nowrap; min-width: 80px; }
+td.day-cell  { font-size: 0.78rem; color: #555; min-width: 80px; }
+td.day-cell.sunday { color: var(--accent); font-weight: 800; }
+
+/* PERSON BADGE */
+.person-badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 20px;
+  font-weight: 800; font-size: 0.78rem;
+  color: #fff; white-space: nowrap;
+  text-shadow: 0 1px 2px #0004;
+}
+
+/* TICK CELL */
+td.tick-cell { min-width: 38px; max-width: 42px; }
+.tick-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 2px solid #ccc; background: #fff;
+  cursor: pointer; font-size: 1rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.tick-btn:hover  { border-color: var(--done-bdr); background: #e8f5e9; }
+.tick-btn.ticked { border-color: var(--done-bdr); background: var(--done-bdr); color: #fff; }
+
+/* PHOTO CELL */
+td.photo-cell { min-width: 54px; }
+.photo-btn {
+  background: none; border: 1.5px dashed #bbb; border-radius: 5px;
+  padding: 2px 5px; cursor: pointer; font-size: 0.68rem; color: #888;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 2px;
+}
+.photo-btn.has-photo { border-color: #3182CE; color: #3182CE; background: #EBF8FF; }
+.photo-thumb {
+  width: 34px; height: 34px; object-fit: cover;
+  border-radius: 4px; border: 1.5px solid #ccc; cursor: pointer; display: block; margin: 2px auto 0;
+}
+
+/* DONE ROW HIGHLIGHT */
+td.done-cell { background: var(--done-bg) !important; }
+
+/* N/A CELL */
+.na-cell { color: var(--na-color); font-size: 1rem; }
+
+/* MODAL */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: #00000088; z-index: 200;
+  align-items: center; justify-content: center;
+}
+.overlay.on { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; padding: 26px;
+  max-width: 430px; width: 93%;
+  box-shadow: 0 10px 40px #0004; position: relative;
+}
+.modal h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 14px; padding-right: 24px; }
+.modal .x {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; line-height: 1;
+}
+.modal label { font-size: 0.83rem; font-weight: 700; display: block; margin: 12px 0 4px; color: #444; }
+.modal input[type=file] { font-size: 0.83rem; width: 100%; }
+.modal textarea {
+  width: 100%; border: 1.5px solid #ccc; border-radius: 7px;
+  padding: 8px; font-size: 0.85rem; resize: vertical; min-height: 64px;
+  font-family: inherit;
+}
+.modal textarea:focus { outline: none; border-color: var(--primary); }
+#m-preview {
+  margin-top: 10px; max-width: 100%; max-height: 170px;
+  border-radius: 8px; display: none; object-fit: cover;
+}
+.modal .save-btn {
+  margin-top: 16px; width: 100%;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 9px; padding: 11px;
+  font-size: 1rem; cursor: pointer; font-weight: 800; letter-spacing: .5px;
+}
+.modal .save-btn:hover { background: #2c5282; }
+
+@media (max-width:640px) {
+  header h1 { font-size: 1.1rem; }
+  .table-wrap { padding: 8px; }
+  .stats, .legend { padding: 10px 12px; }
+  .month-nav { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <h1>🏠 BAMS Room Work</h1>
+    <p>Ajay &nbsp;·&nbsp; Moulali &nbsp;·&nbsp; Basha &nbsp;·&nbsp; Sattam</p>
+  </div>
+  <div id="clock"></div>
+</header>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:var(--c-ajay)"></div>Ajay</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--c-moulali)"></div>Moulali</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--c-basha)"></div>Basha</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--c-sattam)"></div>Sattam</div>
+  <div class="leg" style="margin-left:auto;">
+    <span style="background:var(--done-bg);border:2px solid var(--done-bdr);border-radius:6px;padding:3px 10px;font-size:.78rem;color:#155724;">✅ Done</span>
+  </div>
+  <div class="leg">
+    <span style="background:#f0f0f0;border-radius:6px;padding:3px 10px;font-size:.78rem;color:#aaa;">— Not scheduled</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats" id="stats-bar"></div>
+
+<!-- MONTH NAV -->
+<div class="month-nav">
+  <button onclick="changeMonth(-1)">&#8249;</button>
+  <span id="month-label" style="min-width:160px;text-align:center;"></span>
+  <button onclick="changeMonth(1)">&#8250;</button>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr class="hdr-top">
+        <th rowspan="2" style="min-width:82px;">Date</th>
+        <th rowspan="2" style="min-width:82px;">Day</th>
+        <th colspan="3" class="chore-hdr">🥣 Bowl Cleaning<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Daily</span></th>
+        <th colspan="3" class="chore-hdr">🍚 Rice Cooking<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Daily</span></th>
+        <th colspan="3" class="chore-hdr">💧 Water Can Refill<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Wed &amp; Sat</span></th>
+        <th colspan="3" class="chore-hdr">👕 Washing Machine Usage<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Mon / Tue / Thu / Fri</span></th>
+        <th colspan="3" class="chore-hdr">🧹 Room Cleaning<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Every Sunday</span></th>
+        <th colspan="3" class="chore-hdr">🪣 Mopping<br><span style="font-weight:400;font-size:.72rem;opacity:.85;">Every Sunday</span></th>
+      </tr>
+      <tr class="hdr-sub">
+        <th>Person</th><th>✓</th><th>📷</th>
+        <th>Person</th><th>✓</th><th>📷</th>
+        <th>Person</th><th>✓</th><th>📷</th>
+        <th>Person</th><th>✓</th><th>📷</th>
+        <th>Person</th><th>✓</th><th>📷</th>
+        <th>Person</th><th>✓</th><th>📷</th>
+      </tr>    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="x" onclick="closeModal()">×</button>
+    <h2 id="m-title">Upload Photo Proof</h2>
+    <label>📷 Upload Photo</label>
+    <input type="file" accept="image/*" id="m-file" onchange="previewFile(this)"/>
+    <img id="m-preview" src="" alt="preview"/>
+    <label>📝 Note (optional)</label>
+    <textarea id="m-note" placeholder="e.g. Done at 8am..."></textarea>
+    <button class="save-btn" onclick="saveModal()">✅ Save</button>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────
+const MEMBERS = ["Ajay","Moulali","Basha","Sattam"];
+
+// Badge background colors (solid, readable)
+const BADGE_COLORS = {
+  Ajay:    "#D6336C",
+  Moulali: "#1A73E8",
+  Basha:   "#1E8449",
+  Sattam:  "#E67E22"
+};
+
+// Stat card left-border colors
+const STAT_COLORS = {
+  Ajay:    "#FF85A1",
+  Moulali: "#4DA6FF",
+  Basha:   "#3DBE6E",
+  Sattam:  "#FFB347"
+};
+
+// Chore definitions
+// days: "daily" | array of JS getDay() values (0=Sun,1=Mon,...,6=Sat)
+const CHORES = [
+  { key:"bowl",  label:"Bowl Cleaning",        days:"daily",   startOffset:0 },
+  { key:"rice",  label:"Rice Cooking",          days:"daily",   startOffset:2 },
+  { key:"water", label:"Water Can Refill",      days:[3,6],     startOffset:0 },
+  { key:"wash",  label:"Washing Machine Usage", days:[1,2,4,5], startOffset:0 },
+  { key:"room",  label:"Room Cleaning",         days:[0],       startOffset:0 },
+  { key:"mop",   label:"Mopping",               days:[0],       startOffset:1 },
+];
+
+const STORE = "bams_chore_v1";
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || {}; }
+  catch(e) { return {}; }
+}
+function save(d) { localStorage.setItem(STORE, JSON.stringify(d)); }
+
+// ─── ROTATION ─────────────────────────────────────────────────────────────
+// For DAILY chores: rotate every day → person = (dayOfYear + choreOffset) % 4
+// For WEEKLY chores (Sunday): rotate every week → person = (weekOfYear + choreOffset) % 4
+// For BI-WEEKLY (Wed/Sat): each occurrence rotates → count occurrences from year start
+
+// Count how many times a chore has occurred from Jan 1 up to (and including) the given date
+function occurrenceCount(date, choreDays) {
+  let count = 0;
+  const jan1 = new Date(date.getFullYear(), 0, 1);
+  for (let d = new Date(jan1); d <= date; d.setDate(d.getDate() + 1)) {
+    if (choreDays === "daily" || choreDays.includes(d.getDay())) count++;
+  }
+  return count;
+}
+
+// Manual overrides: { "YYYY-MM-DD_choreKey": "PersonName" }
+const OVERRIDES = {
+  "2026-07-03_rice":  "Basha",   // today (Thu Jul 3) rice → Basha
+  "2026-07-04_rice":  "Sattam",  // tomorrow (Fri Jul 4) rice → Sattam
+  "2026-06-29_wash":  "Ajay",    // this week Mon Jun 29 washing → Ajay
+  "2026-06-30_wash":  "Basha",   // this week Tue Jun 30 washing → Basha
+  "2026-07-03_wash":  "Ajay",    // this week Thu Jul 3 washing → Ajay
+  "2026-07-04_wash":  "Basha",   // this week Fri Jul 4 washing → Basha
+};
+
+function assignedMember(date, choreKey) {
+  // Check manual override first
+  const y  = date.getFullYear();
+  const mo = String(date.getMonth()+1).padStart(2,'0');
+  const d  = String(date.getDate()).padStart(2,'0');
+  const okey = `${y}-${mo}-${d}_${choreKey}`;
+  if (OVERRIDES[okey]) return OVERRIDES[okey];
+
+  const chore = CHORES.find(c => c.key === choreKey);
+  const occ   = occurrenceCount(date, chore.days);
+  return MEMBERS[(occ - 1 + chore.startOffset) % 4];
+}
+
+// ─── VIEW STATE ──────────────────────────────────────────────────────────
+const today = new Date();
+let viewYear  = today.getFullYear();
+let viewMonth = today.getMonth(); // default to current month
+
+// Start at July 2026
+viewYear  = 2026;
+viewMonth = 6;
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth <  0) { viewMonth = 11; viewYear--; }
+  renderTable();
+}
+
+// ─── KEY ─────────────────────────────────────────────────────────────────
+function cellKey(date, choreKey) {
+  const y  = date.getFullYear();
+  const mo = String(date.getMonth()+1).padStart(2,'0');
+  const d  = String(date.getDate()).padStart(2,'0');
+  return `${y}-${mo}-${d}_${choreKey}`;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────
+function isActive(chore, dow) {
+  return chore.days === "daily" || chore.days.includes(dow);
+}
+
+const MON_NAMES = ["January","February","March","April","May","June",
+                   "July","August","September","October","November","December"];
+const MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAY_FULL  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+function renderTable() {
+  const data  = load();
+  const tbody = document.getElementById("tbody");
+  document.getElementById("month-label").textContent = `${MON_NAMES[viewMonth]} ${viewYear}`;
+
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  tbody.innerHTML = "";
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date    = new Date(viewYear, viewMonth, d);
+    const dow     = date.getDay();
+    const isSun   = dow === 0;
+    const isToday = date.toDateString() === today.toDateString();
+
+    const tr = document.createElement("tr");
+    if (isSun)   tr.classList.add("sunday-row");
+    else         tr.classList.add(d % 2 === 0 ? "even-row" : "odd-row");
+    if (isToday) tr.classList.add("today-row");
+
+    // Date
+    const tdDate = document.createElement("td");
+    tdDate.className = "date-cell";
+    tdDate.textContent = `${String(d).padStart(2,'0')} ${MON_SHORT[viewMonth]} ${viewYear}`;
+    tr.appendChild(tdDate);
+
+    // Day
+    const tdDay = document.createElement("td");
+    tdDay.className = "day-cell" + (isSun ? " sunday" : "");
+    tdDay.textContent = DAY_FULL[dow];
+    tr.appendChild(tdDay);
+
+    // Each chore → 3 columns: Person | Tick | Photo
+    CHORES.forEach(chore => {
+      const active = isActive(chore, dow);
+      const key    = cellKey(date, chore.key);
+      const entry  = data[key] || {};
+      const done   = !!entry.done;
+
+      // ── Person cell ──
+      const tdP = document.createElement("td");
+      tdP.style.minWidth = "90px";
+      if (done) tdP.classList.add("done-cell");
+      if (!active) {
+        tdP.innerHTML = `<span class="na-cell">—</span>`;
+      } else {
+        const person = assignedMember(date, chore.key);
+        tdP.innerHTML = `<span class="person-badge" style="background:${BADGE_COLORS[person]}">${person}</span>`;
+      }
+      tr.appendChild(tdP);
+
+      // ── Tick cell ──
+      const tdT = document.createElement("td");
+      tdT.className = "tick-cell";
+      if (done) tdT.classList.add("done-cell");
+      if (!active) {
+        tdT.innerHTML = `<span class="na-cell">—</span>`;
+      } else {
+        tdT.innerHTML = `<button class="tick-btn ${done?'ticked':''}" onclick="toggleTick('${key}')" title="Mark done">${done?'✅':''}</button>`;
+      }
+      tr.appendChild(tdT);
+
+      // ── Photo cell ──
+      const tdPh = document.createElement("td");
+      tdPh.className = "photo-cell";
+      if (done) tdPh.classList.add("done-cell");
+      if (!active) {
+        tdPh.innerHTML = `<span class="na-cell">—</span>`;
+      } else {
+        const hasPhoto = !!entry.photo;
+        const label    = chore.label + " · " + DAY_FULL[dow] + " " + d;
+        tdPh.innerHTML = `
+          <button class="photo-btn ${hasPhoto?'has-photo':''}"
+            onclick="openModal('${key}','${label.replace(/'/g,"\\'")}')">
+            ${hasPhoto ? '📷' : '+ 📷'}
+          </button>
+          ${hasPhoto ? `<img class="photo-thumb" src="${entry.photo}" onclick="viewPhoto('${key}')" title="View photo"/>` : ''}`;
+      }
+      tr.appendChild(tdPh);
+    });
+
+    tbody.appendChild(tr);
+  }
+
+  renderStats(data);
+}
+
+// ─── TICK ─────────────────────────────────────────────────────────────────
+function toggleTick(key) {
+  const data = load();
+  data[key]  = data[key] || {};
+  data[key].done = !data[key].done;
+  save(data);
+  renderTable();
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────
+let activeKey = null;
+
+function openModal(key, title) {
+  activeKey = key;
+  const entry = (load()[key]) || {};
+  document.getElementById("m-title").textContent = "📷 " + title;
+  document.getElementById("m-note").value = entry.note || "";
+  const prev = document.getElementById("m-preview");
+  if (entry.photo) { prev.src = entry.photo; prev.style.display = "block"; }
+  else             { prev.src = ""; prev.style.display = "none"; }
+  document.getElementById("m-file").value = "";
+  document.getElementById("overlay").classList.add("on");
+}
+
+function closeModal() {
+  document.getElementById("overlay").classList.remove("on");
+  activeKey = null;
+}
+
+function previewFile(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p = document.getElementById("m-preview");
+    p.src = e.target.result; p.style.display = "block";
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function saveModal() {
+  if (!activeKey) return;
+  const data = load();
+  data[activeKey] = data[activeKey] || {};
+  const note = document.getElementById("m-note").value.trim();
+  const prev = document.getElementById("m-preview");
+  if (note) data[activeKey].note = note;
+  if (prev.src && prev.src.length > 10 && prev.src !== window.location.href) {
+    data[activeKey].photo = prev.src;
+    data[activeKey].done  = true;
+  }
+  save(data);
+  closeModal();
+  renderTable();
+}
+
+function viewPhoto(key) {
+  const entry = (load()[key]) || {};
+  if (!entry.photo) return;
+  const w = window.open("","_blank");
+  w.document.write(`
+    <html><head><title>Photo Proof</title>
+    <style>body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}
+    img{max-width:98vw;max-height:90vh;border-radius:8px;}
+    p{color:#eee;font-family:sans-serif;padding:12px;text-align:center;}</style></head>
+    <body><img src="${entry.photo}"/>
+    ${entry.note ? `<p>${entry.note}</p>` : ''}
+    </body></html>`);
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────
+function renderStats(data) {
+  const bar = document.getElementById("stats-bar");
+  const counts = {}; MEMBERS.forEach(m => counts[m] = 0);
+  let totalDone = 0, totalSlots = 0;
+
+  // Count total slots this month
+  const dim = new Date(viewYear, viewMonth+1, 0).getDate();
+  for (let d = 1; d <= dim; d++) {
+    const dow = new Date(viewYear, viewMonth, d).getDay();
+    CHORES.forEach(c => { if (isActive(c, dow)) totalSlots++; });
+  }
+
+  // Count done per person
+  Object.keys(data).forEach(k => {
+    if (!data[k].done) return;
+    const parts = k.split("_");
+    if (parts.length < 2) return;
+    const [y,mo,d] = parts[0].split("-").map(Number);
+    if (y !== viewYear || mo-1 !== viewMonth) return; // only this month
+    totalDone++;
+    const choreKey = parts[1];
+    const date = new Date(y, mo-1, d);
+    const person = assignedMember(date, choreKey);
+    if (counts[person] !== undefined) counts[person]++;
+  });
+
+  bar.innerHTML = `
+    <div class="stat-card">
+      <div class="val" style="color:var(--primary)">${totalDone} / ${totalSlots}</div>
+      <div class="lbl">Total chores done this month</div>
+    </div>
+    ${MEMBERS.map(m => `
+    <div class="stat-card" style="border-left-color:${STAT_COLORS[m]}">
+      <div class="val" style="color:${BADGE_COLORS[m]}">${counts[m]}</div>
+      <div class="lbl">${m}'s completions</div>
+    </div>`).join('')}`;
+}
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────
+function tick() {
+  document.getElementById("clock").textContent =
+    new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+setInterval(tick, 1000); tick();
+
+// ─── CLOSE ON BACKDROP ────────────────────────────────────────────────────
+document.getElementById("overlay").addEventListener("click", function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>
